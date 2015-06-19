@@ -72,7 +72,10 @@ router.route('/spotify').post(function (req, res) {
 	var artistName = (requestString !== null && requestString !== "" && typeof(requestString) !== "undefined") ? requestString.substring(spotifyPrefixOffset) : "Pearl Jam";
 
 	if(artistName.lastIndexOf(':albums') > -1) {
+		// TODO: do this a better way!
+		artistName = artistName.replace(':albums', '');
 		// get top 5 albums on Spotify for that artist
+		console.log("Searching top 5 albums for: " + artistName);
 		spotifySearch.getArtistAlbums(artistName).then(function (albums) {
 			return res.json(formatSlackAlbumsResponse(artistName, albums));
 		}, function (error) {
@@ -80,7 +83,10 @@ router.route('/spotify').post(function (req, res) {
 		});
 	}
 	else if(artistName.lastIndexOf(':related') > -1) {
+		// TODO: do this a better way!
+		artistName = artistName.replace(':related', '');
 		// do search on related artists
+		console.log("Searching related bands for: " + artistName);
 		spotifySearch.getRelatedArtists(artistName).then(function (artists) {
 			return res.json(formatSlackArtistsResponse(artistName, artists));
 		}, function (error) {
@@ -91,7 +97,8 @@ router.route('/spotify').post(function (req, res) {
 		// get top 5 tracks for this artist
 		console.log('Searching top 5 tracks for: ' + artistName);
 		spotifySearch.getTracksByArtist(artistName, 5).then(function (trackList) {
-			return res.json(formatSlackResponse(artistName, trackList));
+			console.log("tracklist: " + trackList);
+			return res.json(formatSlackTracksResponse(artistName, trackList));
 		}, function (error) {
 			return res.json({"error": error});
 		});

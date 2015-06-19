@@ -35,10 +35,6 @@ module.exports = new function () {
 	this.getRelatedArtists = function (artistName) {
 		return getArtistID(artistName).then(function (artistID) {
 			var artistsPromise = spotifyClient.getArtistRelatedArtists(artistID);
-			//return artistsPromise.then(function (data) {
-			//	return data.artists;
-			//});
-
 			return artistsPromise.then(function (data) {
 				var artists = [];
 				console.log('items in dataset: ' + data.artists.length);
@@ -76,13 +72,6 @@ module.exports = new function () {
 					});
 				}
 				return topAlbums;
-
-				// if (data.albums.length) {
-				//   console.log('I got ' + data.albums.length + ' albums for ' + artistName +'!');
-				//   console.log('The most popular one is ' + data.albums[0].name);
-				// } else {
-				//   console.log('I didn\'t find any albums... Sorry.');
-				// }
 			});
 		});
 	}
