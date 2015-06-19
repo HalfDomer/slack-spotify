@@ -32,10 +32,10 @@ router.get('/', function(req, res) {
 
 // Slack POST example: spotify <artist name>
 router.route('/spotify').post(function(req, res) {
-  var requestString = req.body.text;
-  // var slotifyPrefixOffset = ('slotify '.length -1);
-  var spotifyPrefixOffset = ('spotify '.length -1);
-  var artistName = requestString.substring(spotifyPrefixOffset);
+  //var requestString = req.body.text;
+  //var spotifyPrefixOffset = ('spotify '.length -1);
+  //var artistName = requestString.substring(spotifyPrefixOffset);
+  var artistName = "Nirvana";
   console.log('Performing a search for: ' + artistName);
   spotifySearch.getTracksByArtist(artistName, 5).then(function(trackList) {
     return res.json(makeSlackResponse(artistName, trackList));

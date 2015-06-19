@@ -55,7 +55,8 @@ module.exports = new function() {
       return albumsPromise.then(function(data) 
       {
         console.log('data:' + data);
-        return data.albums;
+        return data.items;
+        // return data.albums;
         /*
         var topAlbums = [];
         console.log('albums: ' + data.albums.length);
