@@ -1,2 +1,12 @@
-# slack-spotify
-Node.js app that hooks in with Slack to fetch artists, albums, songs, etc.
+# Slotify
+
+A Slack plugin that returns links to an artist's top tracks on Spotify
+
+
+###Set Up
+Deploy on Heroku
+
+You also need to set up an Outgoing WebHook on Slack with slotify as the keyword
+
+###Usage
+	slotify <artist name>

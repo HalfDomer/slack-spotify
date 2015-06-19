@@ -1,0 +1,16 @@
+{
+    "name": "slack-spotify",
+    "main": "index.js",
+    "dependencies":{
+        "express": "*",
+        "spotify-web-api-node": "1.0.0",
+        "body-parser": "~1.0.1"
+    },
+    "license": "BSD-3-Clause",
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/npm/npm.git"
+    }
+
+}
