@@ -2,6 +2,8 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var spotifySearch = require('./spotifySearch.js');
+var constants = require('./constants.js');
+
 var port = process.env.PORT || 8081;
 var app = express();
 app.use(bodyParser.urlencoded({extended: true}));
@@ -17,44 +19,30 @@ router.use(function (req, res, next) {
 var spotifyUrl = 'https://open.spotify.com/';
 var slackKeywordHook = 'spotify ';
 
-// formats song tracks response for Slack
-var formatSlackTracksResponse = function (artist, trackList) {
-	var spotifyLink = spotifyUrl + 'track/';
-	var textResponse = "Top tracks for " + artist + ":\n";
+// returns a generic text response
+var getTextResponse = function (artist, type) {
+	var text = (type === constants.relatedType) ? "Related " : "Top ";
+	text += type + "s for " + artist + ":\n";
+	return text;
+}
 
-	for (var i = 0; i < trackList.length; i++) {
-		var track = trackList[i];
-		textResponse += ('<' + spotifyLink + track.id + '|' + track.name + '>\n');
+// formats the text response for Slack
+var formatSlackResponse = function (artist, items, type) {
+	var spotifyLink = spotifyUrl + type +  '/';
+	var textResponse = getTextResponse(artist, type);
+
+	for (var i = 0; i < items.length; i++) {
+		var item = items[i];
+		textResponse += ('<' + spotifyLink + item.id + '|' + item.name + '>\n');
 	}
 
 	return {'text': textResponse};
 };
 
-// formats albums response for Slack
-var formatSlackAlbumsResponse = function (artist, albums) {
-	var spotifyLink = spotifyUrl + 'album/';
-	var textResponse = "Top albums for " + artist + ":\n";
-
-	for (var i = 0; i < albums.length; i++) {
-		var album = albums[i];
-		textResponse += ('<' + spotifyLink + album.id + '|' + album.name + '>\n');
-	}
-
-	return {'text': textResponse};
-};
-
-// formats related artists response for Slack
-var formatSlackArtistsResponse = function (artist, relatedArtists) {
-	var spotifyLink = spotifyUrl + 'artist/';
-	var textResponse = "Related artists for " + artist + ":\n";
-
-	for (var i = 0; i < relatedArtists.length; i++) {
-		var relatedArtist = relatedArtists[i];
-		textResponse += ('<' + spotifyLink + relatedArtist.id + '|' + relatedArtist.name + '>\n');
-	}
-
-	return {'text': textResponse};
-};
+// gets the search type: albums, related artists, tracks
+var getSearchType = function(searchString) {
+	return (searchString.lastIndexOf(constants.searchTypeAlbums) > -1) ? constants.albumType : (searchString.lastIndexOf(constants.searchTypeRelated) > -1) ? constants.relatedType : constants.trackType;
+}
 
 // simple hello-world example: http://localhost:8081/api/
 router.get('/', function (req, res) {
@@ -69,85 +57,18 @@ router.get('/', function (req, res) {
 router.route('/spotify').post(function (req, res) {
 	var requestString = req.body.text;
 	var spotifyPrefixOffset = (slackKeywordHook.length - 1);
-	var artistName = (requestString !== null && requestString !== "" && typeof(requestString) !== "undefined") ? requestString.substring(spotifyPrefixOffset) : "Pearl Jam";
+	var artistName = (requestString !== null && requestString !== "" && typeof(requestString) !== "undefined") ? requestString.substring(spotifyPrefixOffset) : constants.defaultArtist;
+	var type = getSearchType(artistName);
 
-	if(artistName.lastIndexOf(':albums') > -1) {
-		// TODO: do this a better way!
-		artistName = artistName.replace(':albums', '');
-		// get top 5 albums on Spotify for that artist
-		console.log("Searching top 5 albums for: " + artistName);
-		spotifySearch.getArtistAlbums(artistName).then(function (albums) {
-			return res.json(formatSlackAlbumsResponse(artistName, albums));
-		}, function (error) {
-			return res.json({"error": error});
-		});
-	}
-	else if(artistName.lastIndexOf(':related') > -1) {
-		// TODO: do this a better way!
-		artistName = artistName.replace(':related', '');
-		// do search on related artists
-		console.log("Searching related bands for: " + artistName);
-		spotifySearch.getRelatedArtists(artistName).then(function (artists) {
-			return res.json(formatSlackArtistsResponse(artistName, artists));
-		}, function (error) {
-			return res.json({"error": error});
-		});
-	}
-	else {
-		// get top 5 tracks for this artist
-		console.log('Searching top 5 tracks for: ' + artistName);
-		spotifySearch.getTracksByArtist(artistName, 5).then(function (trackList) {
-			console.log("tracklist: " + trackList);
-			return res.json(formatSlackTracksResponse(artistName, trackList));
-		}, function (error) {
-			return res.json({"error": error});
-		});
-	}
-});
+	// clean our search string...
+	artistName = artistName.replace(constants.searchTypeAlbums, '').replace(constants.searchTypeRelated, '').trim();
 
-// gets artist top tracks by the following example URL: http://localhost:8081/api/spotify/<artist name>
-router.route('/spotify/:artist').get(function (req, res) {
-	var artistName = req.params["artist"];
-	console.log('Performing a search for: ' + artistName);
-	spotifySearch.getTracksByArtist(artistName, 5).then(function (trackList) {
-		return res.json(formatSlackResponse(artistName, trackList));
+	spotifySearch.searchSpotify(artistName, type).then(function (items) {
+		return res.json(formatSlackResponse(artistName, items, type));
 	}, function (error) {
 		return res.json({"error": error});
 	});
 });
-
-// gets artist top tracks by the following example URL: http://localhost:8081/api/spotify?text=<artist name>
-router.route('/spotify').get(function (req, res) {
-	var artistName = req.query.text;
-	console.log('Performing a search for: ' + artistName);
-	spotifySearch.getTracksByArtist(artistName, 5).then(function (trackList) {
-		return res.json(formatSlackResponse(artistName, trackList));
-	}, function (error) {
-		return res.json({"error": error});
-	});
-});
-
-// gets artist albums by the following example URL: http://localhost:8081/api/spotify/albums/<artist name>
-router.route('/spotify/albums/:artist').get(function (req, res) {
-	var artistName = req.params["artist"];
-	console.log('Performing a search for: ' + artistName);
-	spotifySearch.getArtistAlbums(artistName).then(function (albums) {
-		return res.json(albums);
-	}, function (error) {
-		return res.json({"error": error});
-	});
-});
-
-router.route('/spotify/related/:artist').get(function (req, res) {
-	var artistName = req.params["artist"];
-	console.log('Performing a search for: ' + artistName);
-	spotifySearch.getRelatedArtists(artistName).then(function (artists) {
-		return res.json(artists);
-	}, function (error) {
-		return res.json({"error": error});
-	});
-});
-
 
 app.use('/api', router);
 app.listen(port);

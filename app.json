@@ -1,7 +1,7 @@
 {
-  "name": "Slotify",
-  "description": "Slack plugin that returns top tracks of an artist",
-  "repository": "github.com/dangitdang/Slotify",
+  "name": "Slack Spotify",
+  "description": "Integration for Slack that returns various data from Spotify such as artist top songs, albums, and related artists.",
+  "repository": "github.com/halfdomer/slack-spotify",
   "logo": "",
-  "keywords": ["node", "spotify", "slotify"]
+  "keywords": ["node", "spotify", "slack"]
 }
